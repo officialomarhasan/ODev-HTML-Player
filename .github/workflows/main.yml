@@ -1,1 +1,55 @@
+name: ODev HTML Player APK Build
 
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Setup Gradle 8.7
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.7'
+
+      - name: Extract Android Project
+        run: |
+          if [ ! -f "ODev_HTML_Player_Project_v1.zip" ]; then
+            echo "ERROR: Project ZIP not found!"
+            exit 1
+          fi
+
+          mkdir -p extracted
+
+          unzip -q ODev_HTML_Player_Project_v1.zip -d extracted
+
+          if [ ! -f "extracted/ODev_HTML_Player_Project/settings.gradle" ]; then
+            echo "ERROR: Android Project not found!"
+            exit 1
+          fi
+
+      - name: Build Android APK
+        working-directory: extracted/ODev_HTML_Player_Project
+        run: |
+          gradle --version
+          gradle --no-daemon clean assembleDebug
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: ODev-HTML-Player-APK
+          path: extracted/ODev_HTML_Player_Project/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
